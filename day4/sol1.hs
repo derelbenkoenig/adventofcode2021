@@ -1,3 +1,5 @@
+{-# LANGUAGE TupleSections #-}
+
 import Data.List
 import Data.Monoid
 
@@ -17,25 +19,25 @@ parseInput input = (nums, boards) where
     boards = (map (map rowFromLine) . map (take 5) . batch 6) rest where
         rowFromLine =  map ((\x -> (x, False)) . read) . words
 
-applyNumToBoard n = (map . map) (\(x, b) -> (x, b || x == n))
+applyNumToBoard n = (map . map) (\(x, b) -> (x, b || (x == n)))
 
 hasScored board = hasScoredRow board || hasScoredCol board where
     hasScoredRow = any $ all snd
     hasScoredCol = hasScoredRow . transpose
 
 -- sum up the NON marked spaces
-tryScore :: Board -> Maybe Int
-tryScore board = if hasScored board then Just $ sum $ map (\(x,b) -> if b then 0 else x) $ concat board else Nothing
+tryScore :: Int -> Board -> Maybe Int
+tryScore n board = if hasScored board then Just $ (* n) $ sum $ map (\(x,b) -> if b then 0 else x) $ concat board else Nothing
 
-tryFindFirstScored :: [Board] -> Maybe Int
-tryFindFirstScored = getFirst . mconcat . map (First . tryScore)
+tryFindFirstScored :: Int -> [Board] -> Maybe Int
+tryFindFirstScored n = getFirst . mconcat . map (First . tryScore n)
 
 -- for each num, apply it to all boards, see if one scored, if so, short circuit and return the score
 playGame :: [Int] -> [Board] -> Maybe Int
 playGame nums boards = let
-    states :: [[Board]]
-    states = scanr (\n bs -> map (applyNumToBoard n) bs) boards nums
-    in getFirst . mconcat . map (First . tryFindFirstScored) $ states
+    states :: [(Int, [Board])]
+    states = zip (0:nums) $ scanl (\bs n -> map (applyNumToBoard n) bs) boards nums
+    in getFirst . mconcat . map (First . uncurry tryFindFirstScored) $ states
 
 process = uncurry playGame . parseInput
 
