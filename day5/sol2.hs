@@ -35,7 +35,11 @@ isHoriOrVert vl = isHorizontal vl || isVertical vl
 
 sortPair (a,b) = if a <= b then (a,b) else (b,a)
 
-rangeFromVentLine (VentLine x1 y1 x2 y2) = range (sortPair ((x1,y1),(x2,y2)))
+rangeFromVentLine (VentLine x1 y1 x2 y2) = zip (fromto x1 x2) (fromto y1 y2) where
+    fromto a b = case compare a b of
+      LT -> [a..b] 
+      GT -> reverse [b..a]
+      EQ -> repeat a
 
 -- index is (Int, Int), element is Int
 type Board = IOArray (Int, Int) Int
@@ -46,7 +50,7 @@ blankBoard :: Int -> Int -> IO Board
 blankBoard numRows numCols = newArray ((0,0),(numRows,numCols)) 0
 
 markBoard :: [VentLine] -> Board -> IO Board
-markBoard ventLines startingBoard = foldlM markLine startingBoard (filter isHoriOrVert ventLines)
+markBoard ventLines startingBoard = foldlM markLine startingBoard ventLines
 
 markLine :: Board -> VentLine -> IO Board
 markLine board vl = foldlM markSquare board (rangeFromVentLine vl)
