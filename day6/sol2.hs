@@ -20,8 +20,7 @@ fish2Arr fishes = let
 nextDay fishArr = fishArr // updateList where
     updateList = newborns:newSixes:living
     -- new 8 and new 6 are calculated specially *from 0 and 7*
-    living = [(nextNum i, fishArr ! i) | i <- [1,2,3,4,5,6,8]]
-    nextNum i = if i == 0 then 6 else i-1
+    living = [(i - 1, fishArr ! i) | i <- [1,2,3,4,5,6,8]]
     newborns = (8, fishArr ! 0)
     newSixes = (6, fishArr ! 0 + fishArr ! 7)
 
