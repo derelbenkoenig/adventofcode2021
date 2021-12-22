@@ -37,7 +37,7 @@ sortPair (a,b) = if a <= b then (a,b) else (b,a)
 
 rangeFromVentLine (VentLine x1 y1 x2 y2) = zip (fromto x1 x2) (fromto y1 y2) where
     fromto a b = case compare a b of
-      LT -> [a..b] 
+      LT -> [a..b]
       GT -> reverse [b..a]
       EQ -> repeat a
 
