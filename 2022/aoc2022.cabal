@@ -1,0 +1,69 @@
+cabal-version: 3.6
+
+-- This file has been generated from package.yaml by hpack version 0.35.0.
+--
+-- see: https://github.com/sol/hpack
+
+name:           aoc2022
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/derelbenkoenig/adventofcode2021/tree/main/aoc2022>
+homepage:       https://github.com/derelbenkoenig/adventofcode2021/tree/main/aoc2022
+bug-reports:    https://github.com/derelbenkoenig/adventofcode2021/tree/main/aoc2022
+author:         Robert Benson
+maintainer:     derelbenkoenig@gmail.com
+copyright:      2022 Robert Benson
+-- license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/derelbenkoenig/adventofcode2021
+
+library
+  exposed-modules:
+      Aoc
+    , Solutions
+    , Day1
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+    , base >=4.7 && <5
+    , constraints
+    , megaparsec >=9.2.2 && <10
+    , singletons
+    , singletons-base
+    , singletons-th
+    , text
+  default-language: Haskell2010
+  default-extensions:
+    , ConstraintKinds
+    , DataKinds
+    , FlexibleContexts
+    , FlexibleInstances
+    , GADTs
+    , InstanceSigs
+    , RankNTypes
+    , ScopedTypeVariables
+    , StandaloneKindSignatures
+    , TemplateHaskell
+    , TypeApplications
+    , TypeFamilies
+    , TypeInType
+    , UndecidableInstances
+
+executable run-solution
+  main-is: Main.hs
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aoc2022
+    , base >=4.7 && <5
+    , optparse-applicative
+    , text
+  default-language: Haskell2010
