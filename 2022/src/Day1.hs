@@ -22,7 +22,7 @@ runSolution 2 = processSnackBundles (sum . topNSnackBundles 3)
 processSnackBundles :: Show a => ([[Int]] -> a) -> FilePath -> IO ()
 processSnackBundles f fp = do
     input <- T.readFile fp
-    snackBundles <- failOnParseError $ runParser parser fp input
+    snackBundles <- parseOrFail parser fp input
     print $ f snackBundles
 
 
