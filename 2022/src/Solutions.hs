@@ -3,12 +3,16 @@
 
 module Solutions where
 
+import qualified Data.Text.IO as T
+import qualified Data.Text as T
+import Data.Void
 import Numeric.Natural
 import qualified Text.Megaparsec as M
-import qualified Data.Text.IO as T
 
 data ProblemNumber = ProblemNumber Natural Natural
     deriving (Eq, Show)
+
+type Parser = M.Parsec Void T.Text
 
 failOnParseError :: (MonadFail m,
                      M.VisualStream s,

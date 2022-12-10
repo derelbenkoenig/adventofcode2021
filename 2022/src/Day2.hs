@@ -55,8 +55,6 @@ score2 theirs outcome =
     let mine = choiceForOutcome theirs outcome
         in pointBonus mine + outcomeBonus outcome
 
-type Parser = Parsec Void T.Text
-
 parseRPS :: Char -> Char -> Char -> Parser RPS
 parseRPS r p s = Rock <$ single r <|> Paper <$ single p <|> Scissors <$ single s
 

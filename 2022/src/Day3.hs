@@ -28,8 +28,6 @@ runSolution 2 fp = do
 newtype Rucksack = Rucksack { unRucksack :: T.Text }
     deriving Show
 
-type Parser = Parsec Void T.Text
-
 parseRucksack :: Parser Rucksack
 parseRucksack = Rucksack <$> takeWhile1P Nothing isAlpha
 

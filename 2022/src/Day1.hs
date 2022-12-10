@@ -10,9 +10,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer
  
-type MyParser a = Parsec Void T.Text a
-
-parser :: MyParser [[Int]]
+parser :: Parser [[Int]]
 parser = (decimal `sepEndBy` eol) `sepEndBy` eol
 
 runSolution :: Natural -> FilePath -> IO ()
