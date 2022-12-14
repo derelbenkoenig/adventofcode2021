@@ -23,9 +23,18 @@ import qualified Text.Megaparsec.Char.Lexer as L
 runSolution n fp = do
     input <- T.readFile fp
     fileTree <- parseOrFail parseFileTreeFromShellSession fp input
-    print fileTree
     let dirSizes = allDirectorySizes fileTree
-    print $ sum $ filter (<= 100000) dirSizes
+    if n == 1
+        then print $ sum $ filter (<= 100000) dirSizes
+        else do
+            let spaceUsed = maximum dirSizes
+                totalCapacity = 70000000
+                freeSpaceNeeded = 30000000
+                freesEnough n = spaceUsed - n <= totalCapacity - freeSpaceNeeded
+                candidates = filter freesEnough dirSizes
+                victimDirectory = minimum candidates
+            print victimDirectory
+
 
 data Some1 (f :: k -> Type) where
     Some1 :: f a -> Some1 f
