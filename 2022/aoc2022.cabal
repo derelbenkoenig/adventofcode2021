@@ -57,6 +57,7 @@ library
     , QuantifiedConstraints
     , RankNTypes
     , ScopedTypeVariables
+    , StandaloneDeriving
     , StandaloneKindSignatures
     , TemplateHaskell
     , TypeApplications
