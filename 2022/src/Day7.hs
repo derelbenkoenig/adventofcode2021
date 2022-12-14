@@ -9,7 +9,6 @@ import Data.Constraint
 import Data.Foldable (foldl', foldMap')
 import Data.Maybe (catMaybes)
 import Data.Kind (Type)
-import Data.Monoid (Any(..))
 import Data.Semigroup (Sum(..))
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -91,7 +90,7 @@ allDirectorySizes fn = fst $ go fn where
     go (RegularNode _ s) = ([], s)
     go (DirNode _ children) =
         let childResults = map (\(Some1 x) -> go x) children
-            (ds, size) = foldl' (\(xs, i) (xs', i') -> (xs ++ xs', i + i')) ([], 0) childResults
+            (ds, Sum size) = foldMap' (\(xs, i) -> (xs , Sum i)) childResults
             in (size:ds, size)
 
 symbol = L.symbol hspace
