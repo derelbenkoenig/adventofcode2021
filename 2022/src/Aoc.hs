@@ -11,6 +11,7 @@ import qualified Day3
 import qualified Day4
 import qualified Day5
 import qualified Day6
+import qualified Day7
 
 runSolution :: ProblemNumber -> FilePath -> IO ()
 runSolution (ProblemNumber d p) = case d of
@@ -20,4 +21,5 @@ runSolution (ProblemNumber d p) = case d of
     4 -> Day4.runSolution p
     5 -> Day5.runSolution p
     6 -> Day6.runSolution p
+    7 -> Day7.runSolution p
     _ -> const $ fail $ "no solution for day " <> show d <> " problem " <> show p

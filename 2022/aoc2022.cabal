@@ -33,6 +33,7 @@ library
     , Day4
     , Day5
     , Day6
+    , Day7
   hs-source-dirs:
       src
   build-depends:
@@ -53,6 +54,7 @@ library
     , FlexibleInstances
     , GADTs
     , InstanceSigs
+    , QuantifiedConstraints
     , RankNTypes
     , ScopedTypeVariables
     , StandaloneKindSignatures

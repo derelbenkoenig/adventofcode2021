@@ -34,6 +34,10 @@ somLength = 14
 parseStartMarker :: Int -> Parser T.Text
 parseStartMarker n = mfilter (allDistinct) $ takeP (Just $ show n <> " distinct chars") n
 
+-- attempt to parse n distinct chars
+-- if it fails, discard 1 char and try again,
+-- and increment the counter of how many chars we've had to parse through before
+-- finding the match.
 findStartMarker :: Int -> Parser (T.Text, Int)
 findStartMarker n = go n where
     go l = fmap (, l) (try $ parseStartMarker n) <|>
