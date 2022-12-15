@@ -10,10 +10,8 @@ import Data.Foldable (foldl', foldMap')
 import Data.Maybe (catMaybes)
 import Data.Kind (Type)
 import Data.Semigroup (Sum(..))
-import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import Day3 (textToSet)
 import Solutions
 import Text.Megaparsec
 import Text.Megaparsec.Char
