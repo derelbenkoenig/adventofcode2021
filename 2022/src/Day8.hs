@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 
 module Day8 where
@@ -6,7 +7,9 @@ import Control.Applicative hiding (many, some)
 import Control.Monad (MonadPlus(..))
 import Data.Array.IArray
 import Data.Char (digitToInt)
-import Data.Foldable (foldl', foldMap')
+import Data.Foldable (foldl', foldMap', maximumBy)
+import Data.Function (on)
+import Data.List.Church.Left.Strict
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -18,74 +21,32 @@ import qualified Text.Megaparsec.Char.Lexer as L
 runSolution n fp = do
     input <- T.readFile fp
     forest <- parseOrFail parseTrees fp input
-    let visibleSet = visibleTreeCoords forest
-    print $ S.size visibleSet
+    case n of
+        1 -> do 
+            let visibleSet = visibleTreeCoords forest
+            print $ S.size visibleSet
+        2 -> do
+            let bestIx = maximumBy (compare `on` scenicScore forest) (indices forest)
+            print $ scenicScore forest bestIx
+        _ -> fail "problem must be 1 or 2"
 
 type TreeIx = (Int, Int)
 type Forest = Array TreeIx Int
 
--- I think they call this one a Church-encoded list
-newtype FoldLList a = FoldLList (forall b. (b -> a -> b) -> b -> b)
+data ForestBounds = ForestBounds
+    { rmin :: Int,
+      cmin :: Int,
+      rmax :: Int,
+      cmax :: Int }
 
-instance Show a => Show (FoldLList a) where
-    showsPrec d as = showParen (d > 10) $
-        showString "foldLList " . showsPrec 11 (foldLToList as)
-
-foldLCons :: a -> FoldLList a -> FoldLList a
-foldLCons a (FoldLList f) = FoldLList $ \g z -> f g (z `g` a)
-
-foldLSnoc :: FoldLList a -> a -> FoldLList a
-foldLSnoc (FoldLList f) a = FoldLList $ \g z -> f g z `g` a
-
-foldLList :: [a] -> FoldLList a
-foldLList as = FoldLList $ \f z -> foldl' f z as
-
-snoc :: [a] -> a -> [a]
-snoc [] a = [a]
-snoc (x:xs) a = x:(snoc xs a)
-
-foldLToList :: FoldLList a -> [a]
-foldLToList (FoldLList f) = f snoc []
-
-foldLEmpty :: FoldLList a
-foldLEmpty = FoldLList $ \f z -> z
-
-foldLAppend :: FoldLList a -> FoldLList a -> FoldLList a
-foldLAppend (FoldLList f) (FoldLList g) = FoldLList $ \h z -> g h (f h z)
-
-foldLFoldl' :: (b -> a -> b) -> b -> FoldLList a -> b
-foldLFoldl' g z (FoldLList f) = f g z
-
-instance Semigroup (FoldLList a) where
-    (<>) = foldLAppend
-
-instance Monoid (FoldLList a) where
-    mempty = foldLEmpty
-
-{-
--- some point-free fun:
--- h = foldl function, f = fmap function, a = accumulator, x = element
-c2 f h a x = h a (f x)
-c2 f h a   = h a . f
-c2 f h a   = (.) (h a) f
-c2 f h a   = flip (.) f (h a)
-c2 f h     = (flip (.) f) . h
-c2 f h     = (. f) . h -- I actually stop here since use site has f and h, and this looks nice
-c2 f       = ((. f) .)
-c2 f       = (.) (. f)
-c2 f       = (.) (flip (.) f)
-c2         = (.) . (flip (.))
-
-foldl h z . fmap f = foldl (c2 f h) z
--}
-
-instance Functor FoldLList where
-    -- fmap f (FoldLList g) = FoldLList $ \h z -> g (\acc x -> h acc (f x)) z
-    fmap f (FoldLList g) = FoldLList $ \h z -> g ((. f) . h) z
+forestBounds :: Forest -> ForestBounds
+forestBounds forest =
+    let ((rmin, cmin), (rmax, cmax)) = bounds forest
+        in ForestBounds{..}
 
 visibleTreeCoords :: Forest -> S.Set TreeIx
 visibleTreeCoords forest =
-    let ((rmin, cmin), (rmax, cmax)) = bounds forest
+    let ForestBounds{..} = forestBounds forest
         row, revRow, col, revCol :: Int -> [TreeIx]
         row r = map (r, ) [cmin,cmin+1..cmax]
         revRow r = map (r, ) [cmax,cmax-1..cmin]
@@ -105,7 +66,25 @@ visibleTreeCoords forest =
         foldLine s = fst . foldl' (accumVisible forest) (s, -1)
 
         in foldLFoldl' foldLine S.empty allLines
-        
+
+-- takeWhile, but it includes the first element that does not satisfy the predicate,
+-- but none after that
+takeWhileThru :: (a -> Bool) -> [a] -> [a]
+takeWhileThru _ [] = []
+takeWhileThru p (x:xs) =
+    if p x
+        then x:(takeWhileThru p xs)
+        else [x]
+
+scenicScore :: Forest -> TreeIx -> Int
+scenicScore forest (r, c) =
+    let ForestBounds{..} = forestBounds forest
+        viewLeft  = map (r,) [c-1,c-2..cmin]
+        viewRight = map (r,) [c+1,c+2..cmax]
+        viewUp    = map (,c) [r-1,r-2..rmin]
+        viewDown  = map (,c) [r+1,r+2..rmax]
+        viewScore = length . takeWhileThru (\ix -> forest ! ix < forest ! (r, c))
+        in product $ map viewScore [viewLeft, viewRight, viewUp, viewDown]
 
 accumVisible :: Forest -> (S.Set TreeIx, Int) -> TreeIx -> (S.Set TreeIx, Int)
 accumVisible forest (oldVis, tallest) new =
