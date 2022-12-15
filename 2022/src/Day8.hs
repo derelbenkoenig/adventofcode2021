@@ -62,8 +62,26 @@ instance Semigroup (FoldLList a) where
 instance Monoid (FoldLList a) where
     mempty = foldLEmpty
 
+{-
+-- some point-free fun:
+-- h = foldl function, f = fmap function, a = accumulator, x = element
+c2 f h a x = h a (f x)
+c2 f h a   = h a . f
+c2 f h a   = (.) (h a) f
+c2 f h a   = flip (.) f (h a)
+c2 f h     = (flip (.) f) . h
+c2 f h     = (. f) . h -- I actually stop here since use site has f and h, and this looks nice
+c2 f       = ((. f) .)
+c2 f       = (.) (. f)
+c2 f       = (.) (flip (.) f)
+c2         = (.) . (flip (.))
+
+foldl h z . fmap f = foldl (c2 f h) z
+-}
+
 instance Functor FoldLList where
-    fmap f as = foldLFoldl' (flip (foldLCons . f)) foldLEmpty as
+    -- fmap f (FoldLList g) = FoldLList $ \h z -> g (\acc x -> h acc (f x)) z
+    fmap f (FoldLList g) = FoldLList $ \h z -> g ((. f) . h) z
 
 visibleTreeCoords :: Forest -> S.Set TreeIx
 visibleTreeCoords forest =
