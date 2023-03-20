@@ -5,7 +5,6 @@ module Day7 where
 import Control.Applicative hiding (many, some)
 import Control.Monad (liftM2, mfilter, void)
 import Data.Char
-import Data.Constraint
 import Data.Foldable (foldl', foldMap')
 import Data.Maybe (catMaybes)
 import Data.Kind (Type)

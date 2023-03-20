@@ -42,12 +42,8 @@ library
   build-depends:
     , base >=4.7 && <5
     , array
-    , constraints
     , containers
     , megaparsec >=9.2.2 && <10
-    , singletons
-    , singletons-base
-    , singletons-th
     , text
   default-language: Haskell2010
   default-extensions:

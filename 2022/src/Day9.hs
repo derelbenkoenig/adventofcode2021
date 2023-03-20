@@ -57,8 +57,14 @@ instance Applicative V2 where
 (<+>) = liftA2 (+)
 
 nTimes :: Int -> (a -> a) -> a -> a
-nTimes = go id where
-    go k n f x = if n <= 0 then k x else go (f . k) (n - 1) f x
+nTimes n f x = if n <= 0
+                  then x
+                  else nTimes (n - 1) f (f x)
+
+nTimes' :: Int -> (a -> a) -> a -> a
+nTimes' n f x = if n <= 0
+                   then x
+                   else let y = f x in y `seq` nTimes' (n - 1) f y
 
 catchUp :: Coord -> Coord -> Coord
 catchUp (V2 hx hy) (V2 tx ty) =
@@ -83,7 +89,7 @@ applyMotionCollectingTail s motion rope =
     collecting (\(Rope r) -> S.insert (NE.last r)) s (`applyMotion` rope) motion
 
 foldlWithIterations' :: Foldable f => (b -> a -> b) -> b -> f (a, Int) -> b
-foldlWithIterations' f = foldl' (\acc (x, n) -> nTimes n (`f` x) acc)
+foldlWithIterations' f = foldl' (\acc (x, n) -> nTimes' n (`f` x) acc)
 
 symbol :: T.Text -> Parser T.Text
 symbol = L.symbol hspace
