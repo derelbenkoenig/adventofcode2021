@@ -35,6 +35,8 @@ library
     , Day6
     , Day7
     , Day8
+    , Day9
+    , Data.List.Church.Left.Strict
   hs-source-dirs:
       src
   build-depends:
