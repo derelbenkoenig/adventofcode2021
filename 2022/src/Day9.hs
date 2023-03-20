@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 module Day9 where
 
 import Control.Applicative hiding (many, some)
@@ -11,6 +10,8 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Foldable (foldl')
+import Data.List.NonEmpty as NE
+import qualified Data.List.NonEmpty
 
 runSolution n fp = do
     input <- T.readFile fp
@@ -19,23 +20,27 @@ runSolution n fp = do
         1 -> do 
             print $ solution1 motions
         2 -> do
-            undefined
+            print $ solution2 motions
         _ -> fail "problem must be 1 or 2"
 
-solution1 :: [(Coord, Int)] -> Int
-solution1 = S.size .
+solution1 = solutionWithRopeLen 2
+solution2 = solutionWithRopeLen 10
+
+solutionWithRopeLen :: Int -> [(Coord, Int)] -> Int
+solutionWithRopeLen n = S.size .
     snd .
     foldlWithIterations'
         (\(rope, positions) motion ->
             applyMotionCollectingTail positions motion rope)
-       (Rope (V2 0 0) (V2 0 0), S.singleton (V2 0 0))
+       (zeroRope n, S.singleton (V2 0 0))
 
 type Coord = V2 Int
 
-data Rope = Rope 
-    Coord -- ^ head
-    Coord -- ^ tail
+newtype Rope = Rope (NonEmpty Coord)
     deriving Show
+
+zeroRope :: Int -> Rope
+zeroRope = Rope . fromList . flip replicate (pure 0)
 
 data V2 a = V2 a a
     deriving (Show, Eq, Ord)
@@ -48,7 +53,7 @@ instance Applicative V2 where
     V2 f g <*> V2 x y = V2 (f x) (g y)
 
 -- I know this means something different in other packages but whatever
-(<+>) :: Num a => V2 a -> V2 a -> V2 a
+(<+>) :: (Num a, Applicative f) => f a -> f a -> f a
 (<+>) = liftA2 (+)
 
 nTimes :: Int -> (a -> a) -> a -> a
@@ -64,17 +69,18 @@ catchUp (V2 hx hy) (V2 tx ty) =
            else V2 (tx + signum dx) (ty + signum dy)
 
 -- Coord is assumed to be a unit vector either straight up/down/left/right
+-- pretty cool that almost all I had to change for part 2 was use scanl here
 applyMotion :: Coord -> Rope -> Rope
-applyMotion motion (Rope h t) =
+applyMotion motion (Rope (h :| t)) =
     let newHead = h <+> motion
-     in Rope newHead (catchUp newHead t)
+     in Rope $ NE.scanl catchUp newHead t
 
 collecting :: (e -> s -> s) -> s -> (a -> e) -> a -> (e, s)
 collecting f a g x = let y = g x in (y, f y a)
 
 applyMotionCollectingTail :: S.Set Coord -> Coord -> Rope -> (Rope, S.Set Coord)
 applyMotionCollectingTail s motion rope =
-    collecting (\(Rope _ t) -> S.insert t) s (`applyMotion` rope) motion
+    collecting (\(Rope r) -> S.insert (NE.last r)) s (`applyMotion` rope) motion
 
 foldlWithIterations' :: Foldable f => (b -> a -> b) -> b -> f (a, Int) -> b
 foldlWithIterations' f = foldl' (\acc (x, n) -> nTimes n (`f` x) acc)
