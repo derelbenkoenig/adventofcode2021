@@ -45,6 +45,15 @@ library
     , containers
     , megaparsec >=9.2.2 && <10
     , text
+  ghc-options:         -Wall
+                       -Wcompat
+                       -Widentities
+                       -Wincomplete-record-updates
+                       -Wincomplete-uni-patterns
+                       -Wmissing-home-modules
+                       -Wpartial-fields
+                       -Wredundant-constraints
+                       -XNoStarIsType
   default-language: Haskell2010
   default-extensions:
     , ConstraintKinds

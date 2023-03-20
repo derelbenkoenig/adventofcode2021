@@ -1,7 +1,6 @@
 module Day9 where
 
 import Control.Applicative hiding (many, some)
-import Control.Monad (MonadPlus(..))
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -11,8 +10,8 @@ import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.Foldable (foldl')
 import Data.List.NonEmpty as NE
-import qualified Data.List.NonEmpty
 
+runSolution :: (Eq a, Num a) => a -> FilePath -> IO ()
 runSolution n fp = do
     input <- T.readFile fp
     motions <- parseOrFail (many parseMotion) fp input
@@ -23,6 +22,7 @@ runSolution n fp = do
             print $ solution2 motions
         _ -> fail "problem must be 1 or 2"
 
+solution1, solution2 :: [(Coord, Int)] -> Int
 solution1 = solutionWithRopeLen 2
 solution2 = solutionWithRopeLen 10
 
@@ -71,8 +71,9 @@ nTimes' n f x = if n <= 0
 
 catchUp :: Coord -> Coord -> Coord
 catchUp h t =
-    let d@(V2 dx dy) = h <-> t
-     in if abs dx <= 1 && abs dy <= 1 
+    let d = h <-> t
+        V2 touchingX touchingY = fmap ((<= 1) . abs) d
+     in if touchingX && touchingY
            then t
            else t <+> fmap signum d
 
@@ -95,13 +96,14 @@ foldlWithIterations' f = foldl' (\acc (x, n) -> nTimes' n (`f` x) acc)
 
 symbol :: T.Text -> Parser T.Text
 symbol = L.symbol hspace
+lexeme :: Parser a -> Parser a
 lexeme = L.lexeme hspace
 
 parseMotion :: Parser (Coord, Int)
 parseMotion = do
     c <- lexeme (oneOf ("LURD" :: [Char])) >>= charToCoord
     n <- lexeme L.decimal
-    eol
+    _ <- eol
     return (c, n)
 
 charToCoord :: Alternative m => Char -> m Coord
