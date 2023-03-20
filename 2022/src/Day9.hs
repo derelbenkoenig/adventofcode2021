@@ -56,6 +56,9 @@ instance Applicative V2 where
 (<+>) :: (Num a, Applicative f) => f a -> f a -> f a
 (<+>) = liftA2 (+)
 
+(<->) :: (Num a, Applicative f) => f a -> f a -> f a
+(<->) = liftA2 (-)
+
 nTimes :: Int -> (a -> a) -> a -> a
 nTimes n f x = if n <= 0
                   then x
@@ -67,12 +70,11 @@ nTimes' n f x = if n <= 0
                    else let y = f x in y `seq` nTimes' (n - 1) f y
 
 catchUp :: Coord -> Coord -> Coord
-catchUp (V2 hx hy) (V2 tx ty) =
-    let dx = hx - tx
-        dy = hy - ty
+catchUp h t =
+    let d@(V2 dx dy) = h <-> t
      in if abs dx <= 1 && abs dy <= 1 
-           then V2 tx ty
-           else V2 (tx + signum dx) (ty + signum dy)
+           then t
+           else t <+> fmap signum d
 
 -- Coord is assumed to be a unit vector either straight up/down/left/right
 -- pretty cool that almost all I had to change for part 2 was use scanl here
