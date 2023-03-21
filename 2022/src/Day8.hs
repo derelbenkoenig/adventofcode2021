@@ -76,6 +76,14 @@ takeWhileThru p (x:xs) =
         then x:(takeWhileThru p xs)
         else [x]
 
+-- takeWhileThru, except just return the count instead of the list prefix.
+countWhileThru :: (a -> Bool) -> [a] -> Int
+countWhileThru _ [] = 0
+countWhileThru p (x:xs) = 
+    if p x
+        then 1 + countWhileThru p xs
+        else 1
+
 scenicScore :: Forest -> TreeIx -> Int
 scenicScore forest (r, c) =
     let ForestBounds{..} = forestBounds forest
@@ -83,7 +91,7 @@ scenicScore forest (r, c) =
         viewRight = map (r,) [c+1,c+2..cmax]
         viewUp    = map (,c) [r-1,r-2..rmin]
         viewDown  = map (,c) [r+1,r+2..rmax]
-        viewScore = length . takeWhileThru (\ix -> forest ! ix < forest ! (r, c))
+        viewScore = countWhileThru (\ix -> forest ! ix < forest ! (r, c))
         in product $ map viewScore [viewLeft, viewRight, viewUp, viewDown]
 
 accumVisible :: Forest -> (S.Set TreeIx, Int) -> TreeIx -> (S.Set TreeIx, Int)
