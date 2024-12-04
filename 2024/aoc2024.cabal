@@ -37,7 +37,8 @@ executable aoc2024-day1
   main-is:             Day1.hs
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5,
-                       aoc2024
+                       aoc2024,
+                       containers
   ghc-options:         -Wall
                        -Wcompat
                        -Widentities

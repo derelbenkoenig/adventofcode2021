@@ -2,7 +2,8 @@ module Main (main) where
 
 import Parsing
 import qualified Parsing.Lexer as L
-import Data.List (sort)
+import Data.List (sort, foldl')
+import qualified Data.Map.Strict as Map
 
 main :: IO ()
 main = do
@@ -14,6 +15,7 @@ main = do
         diffs = zipWith ((abs .) . (-)) sorted1 sorted2
         total = sum diffs
     print total
+    print $ similarityScore sorted1 sorted2
 
 decimal :: Parser Int
 decimal = L.lex L.decimal
@@ -25,3 +27,8 @@ parseListPair pA pB = go id id where
         case mPair of
           Nothing -> pure (f [], g [])
           Just (a, b) -> go (f . (a :)) (g . (b :))
+
+similarityScore :: [Int] -> [Int] -> Int
+similarityScore as bs =
+    let rcounts = foldl' (\ counts n -> Map.insertWith (+) n 1 counts) Map.empty bs
+    in foldl' (\ total a -> total + maybe 0 (a *) (Map.lookup a rcounts)) 0 as
