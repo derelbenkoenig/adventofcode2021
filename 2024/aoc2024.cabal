@@ -17,6 +17,7 @@ extra-source-files:  README.md
 
 common ghcoptions
   default-language:    GHC2021
+  default-extensions:  NoStarIsType
   ghc-options:         -Wall
                        -Wcompat
                        -Widentities
@@ -34,7 +35,9 @@ library
                        megaparsec,
                        text
   exposed-modules:     Parsing,
-                       Parsing.Lexer
+                       Parsing.Lexer,
+                       Data.Zipper,
+                       Control.Comonad
 
 executable aoc2024-day1
   import:              ghcoptions
