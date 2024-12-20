@@ -53,3 +53,10 @@ executable aoc2024-day2
   main-is:             Day2.hs
   build-depends:       base >= 4.7 && < 5,
                        aoc2024
+
+executable aoc2024-day3
+  import:              ghcoptions
+  hs-source-dirs:      src
+  main-is:             Day3.hs
+  build-depends:       base >= 4.7 && < 5,
+                       aoc2024

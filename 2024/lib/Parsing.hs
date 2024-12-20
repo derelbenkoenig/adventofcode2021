@@ -1,17 +1,18 @@
-module Parsing (
-    module Text.Megaparsec,
-    module Text.Megaparsec.Char,
-    Parser,
-    Text,
-    parseOrFail
+module Parsing
+    ( module X
+    , Parser
+    , Text
+    , parseOrFail
+    , manyOptional
     )
     where
 
-import Text.Megaparsec
-import Text.Megaparsec.Char
+import Text.Megaparsec as X
+import Text.Megaparsec.Char as X
 import Data.Void
 import Data.Text
 import qualified Data.Text.IO as T (readFile)
+import Control.Applicative as X hiding (many, some)
 
 type Parser = Parsec Void Text
 
@@ -29,3 +30,15 @@ parseOrFail :: ShowErrorComponent e
 parseOrFail parser fp = do
     input <- T.readFile fp
     failOnParseError $ parse parser fp input
+
+manyOptional :: Parser a -> Parser [a]
+manyOptional p = go id where
+    go f = do
+        isAtEnd <- atEnd
+        if isAtEnd
+           then pure $ f []
+           else do
+               mx <- optional (try p)
+               case mx of
+                 Nothing -> anySingle >> go f
+                 Just x -> go (f . (x :))
