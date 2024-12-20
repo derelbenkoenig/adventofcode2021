@@ -15,7 +15,14 @@ module Data.Zipper
 
 import Control.Comonad
 
-data Zipper a = Zipper { zipped :: [a], focus :: a, unzipped :: [a] }
+data Zipper a =
+    Zipper { zipped :: [a],
+    -- ^ the elements before the focus, in reverse order to enable quick seeking in both directions
+             focus :: a,
+    -- ^ the current element
+             unzipped :: [a]
+    -- ^ the elements after the current focus
+           }
     deriving (Eq, Show)
 
 instance Ord a => Ord (Zipper a) where
