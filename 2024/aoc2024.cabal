@@ -31,32 +31,43 @@ common ghcoptions
 library
   import:              ghcoptions
   hs-source-dirs:      src, lib
-  build-depends:       base >= 4.7 && < 5,
-                       megaparsec,
-                       text
-  exposed-modules:     Parsing,
-                       Parsing.Lexer,
-                       Data.Zipper,
-                       Control.Comonad
+  build-depends:       base >= 4.7 && < 5
+                       , megaparsec
+                       , text
+                       , array
+                       , mtl
+  exposed-modules:     Parsing
+                       , Parsing.Lexer
+                       , Data.Grid
+                       , Data.Zipper
+                       , Control.Comonad
 
 executable aoc2024-day1
   import:              ghcoptions
   hs-source-dirs:      src
   main-is:             Day1.hs
-  build-depends:       base >= 4.7 && < 5,
-                       aoc2024,
-                       containers
+  build-depends:       base >= 4.7 && < 5
+                       , aoc2024
+                       , containers
 
 executable aoc2024-day2
   import:              ghcoptions
   hs-source-dirs:      src
   main-is:             Day2.hs
-  build-depends:       base >= 4.7 && < 5,
-                       aoc2024
+  build-depends:       base >= 4.7 && < 5
+                       , aoc2024
 
 executable aoc2024-day3
   import:              ghcoptions
   hs-source-dirs:      src
   main-is:             Day3.hs
-  build-depends:       base >= 4.7 && < 5,
-                       aoc2024
+  build-depends:       base >= 4.7 && < 5
+                       , aoc2024
+
+executable aoc2024-day4
+  import:              ghcoptions
+  hs-source-dirs:      src
+  main-is:             Day4.hs
+  build-depends:       base >= 4.7 && < 5
+                       , aoc2024
+                       , text
