@@ -4,6 +4,7 @@ module Parsing
     , Text
     , parseOrFail
     , manyOptional
+    , foldrMany
     , StatefulParser
     , parseOrFailStateful
     )
@@ -14,8 +15,9 @@ import Text.Megaparsec.Char as X
 import Data.Void
 import Data.Text
 import qualified Data.Text.IO as T (readFile)
-import Control.Applicative as X hiding (many, some)
+import Control.Applicative hiding (many, some)
 import Control.Monad.State.Strict as X
+import Control.Monad (MonadPlus(..), (<=<))
 import Data.Functor.Identity
 
 type Parser = Parsec Void Text
@@ -48,7 +50,7 @@ parseOrFailStateful parser fp s = do
         (eitherResult, finalState) = runState statefulParse s
     either (fail . errorBundlePretty) (pure . (, finalState)) eitherResult
 
-manyOptional :: Parser a -> Parser [a]
+manyOptional :: MonadParsec e s m => m a -> m [a]
 manyOptional p = go id where
     go f = do
         isAtEnd <- atEnd
@@ -59,3 +61,22 @@ manyOptional p = go id where
                case mx of
                  Nothing -> anySingle >> go f
                  Just x -> go (f . (x :))
+
+foldrMany :: MonadPlus m => (a -> b -> b) -> b -> m a -> m b
+foldrMany combine z p = go id where
+    go f = do
+        mx <- optional p
+        case mx of
+          Nothing -> pure $ f z
+          Just x -> go (f . combine x)
+
+-- | effects will happen right to left. writing one that does the effects left
+--   to right seems tricky. especially if you wanted to do the effects left to right
+--   but then combine the results right to left
+foldrManyM :: MonadPlus m => (a -> b -> m b) -> b -> m a -> m b
+foldrManyM combine z p = go pure where
+    go f = do
+        mx <- optional p
+        case mx of
+          Nothing -> f z
+          Just x -> go (f <=< combine x)

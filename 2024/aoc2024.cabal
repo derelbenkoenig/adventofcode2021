@@ -38,6 +38,7 @@ library
                        , mtl
   exposed-modules:     Parsing
                        , Parsing.Lexer
+                       , Parsing.Grid
                        , Data.Grid
                        , Data.Zipper
                        , Control.Comonad
@@ -71,3 +72,11 @@ executable aoc2024-day4
   build-depends:       base >= 4.7 && < 5
                        , aoc2024
                        , text
+
+executable aoc2024-day5
+  import:              ghcoptions
+  hs-source-dirs:      src
+  main-is:             Day5.hs
+  build-depends:       base >= 4.7 && < 5
+                       , aoc2024
+                       , algebraic-graphs
