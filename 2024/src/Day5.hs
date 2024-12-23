@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiWayIf #-}
+
 module Main (main) where
 
 import Parsing hiding (count)
@@ -11,6 +13,7 @@ import Algebra.Graph.Relation
     , hasEdge)
 import Algebra.Graph.Class as G
 import Algebra.Graph.Export.Dot
+import Data.List (sortBy, partition)
 
 main :: IO ()
 main = do
@@ -18,8 +21,9 @@ main = do
     -- writeFile "rules.dot" $ exportViaShow rules
     -- putStrLn "updates"
     -- mapM_ print updates
-    let legalUpdates = filter (not . updateIsIllegal rules) updates
+    let (illegalUpdates, legalUpdates) = partition (updateIsIllegal rules) updates
     print $ sum $ fmap middle legalUpdates
+    print $ sum $ fmap (middle . makeLegal rules) illegalUpdates
 
 middle :: [a] -> a
 middle xs = xs !! (length xs `div` 2)
@@ -49,3 +53,10 @@ updateIsIllegal rules = any (flip (uncurry hasEdge) rules) . illegalEdges
 
 illegalEdges :: [Int] -> [(Int, Int)]
 illegalEdges = edgeList . transitiveClosure . transpose . clique
+
+makeLegal :: Relation Int -> [Int] -> [Int]
+makeLegal rules = sortBy $ \x y ->
+    if
+       | hasEdge x y rules -> LT
+       | hasEdge y x rules -> GT
+       | otherwise -> EQ
