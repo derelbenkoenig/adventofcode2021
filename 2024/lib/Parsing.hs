@@ -5,6 +5,9 @@ module Parsing
     , parseOrFail
     , manyOptional
     , foldrMany
+    , foldlMany
+    , foldrManyM
+    , foldlManyM
     , StatefulParser
     , parseOrFailStateful
     )
@@ -70,9 +73,6 @@ foldrMany combine z p = go id where
           Nothing -> pure $ f z
           Just x -> go (f . combine x)
 
--- | effects will happen right to left. writing one that does the effects left
---   to right seems tricky. especially if you wanted to do the effects left to right
---   but then combine the results right to left
 foldrManyM :: MonadPlus m => (a -> b -> m b) -> b -> m a -> m b
 foldrManyM combine z p = go pure where
     go f = do
@@ -80,3 +80,19 @@ foldrManyM combine z p = go pure where
         case mx of
           Nothing -> f z
           Just x -> go (f <=< combine x)
+
+foldlMany :: MonadPlus m => (b -> a -> b) -> b -> m a -> m b
+foldlMany f z p = go z where
+    go acc = do
+        mx <- optional p
+        case mx of
+          Nothing -> pure acc
+          Just x -> go (f acc x)
+
+foldlManyM :: MonadPlus m => (b -> a -> m b) -> b -> m a -> m b
+foldlManyM f z p = go z where
+    go acc = do
+        mx <- optional p
+        case mx of
+          Nothing -> pure acc
+          Just x -> f acc x >>= go

@@ -42,6 +42,7 @@ library
                        , Data.Grid
                        , Data.Zipper
                        , Control.Comonad
+                       , Data.Biapplicative
 
 executable aoc2024-day1
   import:              ghcoptions
@@ -80,3 +81,12 @@ executable aoc2024-day5
   build-depends:       base >= 4.7 && < 5
                        , aoc2024
                        , algebraic-graphs
+
+executable aoc2024-day6
+  import:              ghcoptions
+  hs-source-dirs:      src
+  main-is:             Day6.hs
+  build-depends:       base >= 4.7 && < 5
+                       , aoc2024
+                       , containers
+                       , array
