@@ -90,3 +90,12 @@ executable aoc2024-day6
                        , aoc2024
                        , containers
                        , array
+
+executable aoc2024-day7
+  import:              ghcoptions
+  hs-source-dirs:      src
+  main-is:             Day7.hs
+  build-depends:       base >= 4.7 && < 5
+                       , aoc2024
+                       , containers
+                       , array
