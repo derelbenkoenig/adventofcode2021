@@ -6,30 +6,54 @@ import Data.Grid
 
 import Parsing
 import Parsing.Grid
+
+import Data.Array.IArray (assocs, elems)
 import Data.Biapplicative
 import Data.List (unfoldr)
+import Data.Maybe (catMaybes)
+import qualified Data.Set as Set
+
 import Control.Comonad
 import Control.Monad
     ( (<=<)
     , join
     -- , when
     )
-import Data.Array.IArray (assocs)
-import qualified Data.Set as Set
 
 main :: IO ()
 main = do
     roomMapUnfocused <- parseOrFail parseCharGrid "inputs/day6.txt"
     roomMap <- maybe (fail "cannot find guard position") pure $ findGuardPos roomMapUnfocused
-    let allSteps = unfoldr (fmap (join bipure) . doGuardStep) roomMap
-        stepsSet = Set.fromList $ fmap pos allSteps
+    let stepsSet = Set.fromList $ fmap pos (allSteps roomMap)
     print $ Set.size stepsSet
+    print $ length $ filter willLoop $ potentialInsertions roomMap
+
+allSteps :: Grid Char -> [Grid Char]
+allSteps = unfoldr (fmap (join bipure) . doGuardStep)
 
 prettyGrid :: Grid Char -> String
 prettyGrid = foldr (\ ((_,col),a) s -> if col == 0 then '\n':a:s else a:s) "" . assocs . cells
 
 findGuardPos :: Grid Char -> Maybe (Grid Char)
 findGuardPos = trySeekBy (== '^') 
+
+potentialInsertions :: Grid Char -> [Grid Char]
+potentialInsertions g = catMaybes $ elems $ cells $ extend
+    (\ g1 -> if extract g1 == '.'
+               then Just $ seek (focus g) $ set '#' g1
+               else Nothing
+    )
+    g
+
+-- assumes grid is focused on guard
+willLoop :: Grid Char -> Bool
+willLoop g = go Set.empty (allSteps g) where
+    go _ [] = False
+    go seen (g1:gs) =
+        let st = (focus g1, extract g1)
+         in if Set.member st seen
+               then True
+               else go (Set.insert st seen) gs
 
 doGuardStep :: Grid Char -> Maybe (Grid Char)
 doGuardStep g = do
