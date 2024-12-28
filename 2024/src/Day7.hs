@@ -7,36 +7,25 @@ module Main (main) where
 
 import Parsing
 import qualified Parsing.Lexer as L
-import Data.List (foldl', intercalate)
+import Data.List (foldl')
 import Control.Monad (void)
 
 main :: IO ()
 main = do
     potEqns <- parseOrFail (many parsePotEqn) "inputs/day7.txt"
-    print $ sum $ fmap (\ Eqn{..} -> tgtVal) $ potEqns >>= \ peq ->
-        take 1 $ filter satisfied $ findEqn peq
+    mapM_ (\ usingOps -> print $ sum $ fmap (\ Eqn{..} -> tgtVal) $ potEqns >>= \ peq ->
+        take 1 $ filter satisfied $ findEqn usingOps peq) [[Add, Mul], [Add, Mul, Cat]]
 
 data PotEqn = PotEqn { tgtVal :: Int, arg1 :: Int, args :: [Int] }
     deriving (Eq, Show)
 
-data Op = Add | Mul
+data Op = Add | Mul | Cat
     deriving (Eq, Show, Ord, Enum, Bounded)
 
 doOp :: Op -> Int -> Int -> Int
 doOp Add = (+)
 doOp Mul = (*)
-
-operatorChr :: Op -> Char
-operatorChr Add = '+'
-operatorChr Mul = '*'
-
-eqnString :: Eqn -> String
-eqnString Eqn{..} =
-    show tgtVal
-    ++ " = "
-    ++ show arg1
-    ++ " "
-    ++ intercalate " " (fmap (\ (op, arg) -> operatorChr op : ' ' : show arg) ops)
+doOp Cat = \ x y -> read (show x ++ show y)
 
 data Eqn = Eqn { tgtVal :: Int, arg1 :: Int, ops :: [(Op, Int)] }
     deriving (Eq, Show)
@@ -47,9 +36,9 @@ actualVal Eqn{..} = foldl' (\ acc (op, arg) -> doOp op acc arg) arg1 ops
 satisfied :: Eqn -> Bool
 satisfied e@Eqn{tgtVal} = tgtVal == actualVal e
 
-findEqn :: PotEqn -> [Eqn]
-findEqn PotEqn{..} = do
-    ops' <- traverse (\ n -> fmap (,n) [minBound..maxBound]) args
+findEqn :: [Op] -> PotEqn -> [Eqn]
+findEqn usingOps PotEqn{..} = do
+    ops' <- traverse (\ n -> fmap (,n) usingOps) args
     pure $ Eqn tgtVal arg1 ops'
 
 parsePotEqn :: Parser PotEqn
