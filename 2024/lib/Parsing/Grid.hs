@@ -6,23 +6,23 @@ module Parsing.Grid
 import Parsing
 import Control.Applicative hiding (many)
 import Data.Grid
-import Data.Bifunctor
-import Data.Monoid (Endo(..))
+import Control.Monad (when)
 import qualified Data.Text as T
 
 parseCharGrid :: Parser (Grid Char)
 parseCharGrid = do
     firstLine <- parseLine
     let lineLength = T.length firstLine
-    restLines <- many parseLine
-    let lines = firstLine : restLines
-        numLines = length lines
-        allChars = T.unpack $ T.concat lines
-        rowIndices = replicate lineLength 0 ++ fmap (+ 1) rowIndices
-        colIndices = cycle [0..lineLength - 1]
-        indices = zip rowIndices colIndices
+    restLines <- many $ do
+        nextLine <- parseLine
+        when (T.length nextLine /= lineLength) $ fail "mismatched line length"
+        pure nextLine
+    let allLines = firstLine : restLines
+        numLines = length allLines
+        allChars = T.unpack $ T.concat allLines
+        indices = liftA2 (,) [0..numLines - 1] [0..lineLength - 1]
         indexedChars = zip indices allChars
-    pure $ grid ((0, 0), (lineLength - 1, numLines - 1)) indexedChars
+    pure $ grid ((0, 0), (numLines - 1, lineLength - 1)) indexedChars
 
 parseLine :: Parser Text
 parseLine = takeWhile1P Nothing (not . isEol) <* eol
