@@ -42,6 +42,8 @@ library
                        , Data.Grid
                        , Data.Zipper
                        , Control.Comonad
+                       , Control.Monad.List.Trans
+                       , Control.Monad.Trans.Class
                        , Data.Biapplicative
 
 executable aoc2024-day1
@@ -99,3 +101,12 @@ executable aoc2024-day7
                        , aoc2024
                        , containers
                        , array
+
+executable aoc2024-day8
+  import:              ghcoptions
+  hs-source-dirs:      src
+  main-is:             Day8.hs
+  build-depends:       base >= 4.7 && < 5
+                       , aoc2024
+                       , array
+                       , containers
