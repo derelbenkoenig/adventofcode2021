@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiWayIf #-}
+
 module Main (main) where
 
 import Control.Monad.ST
@@ -54,13 +56,14 @@ compactDisk arr = getBounds arr >>= uncurry go
                then pure arr
                else do
                    currFileId <- readArray arr ixL
-                   if currFileId == (-1)
-                      then do
-                          rightFileId <- readArray arr ixR
+                   rightFileId <- readArray arr ixR
+                   if
+                      | currFileId /= (-1) -> go (ixL + 1) ixR
+                      | rightFileId == (-1) -> go ixL (ixR - 1)
+                      | otherwise -> do
                           writeArray arr ixL rightFileId
                           writeArray arr ixR (-1)
                           go (ixL + 1) (ixR - 1)
-                      else go (ixL + 1) ixR
 
 diskChecksum :: STUArray s Int Int -> ST s Int
 diskChecksum arr = foldl' foo 0 <$> getAssocs arr where
