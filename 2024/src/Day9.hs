@@ -6,8 +6,10 @@ import Control.Monad.ST
 
 import Data.Array.MArray
 import Data.Array.ST
-import Data.Char (digitToInt)
+import Data.Char (digitToInt, intToDigit)
 import Data.Foldable (foldl')
+import Data.Maybe (fromMaybe)
+import Data.Sequence (Seq(..))
 
 import Parsing
 
@@ -16,6 +18,8 @@ main = do
     segments <- parseOrFail parseDiskSegments "inputs/day9.txt"
     let stDisk = diskFromDiskmap segments
     print $ runST $ stDisk >>= compactDisk >>= diskChecksum
+
+    print $ labeledMapChecksum $ compactDiskFilewise $ labelSegments segments
 
 data DiskSegment = FileSeg Int | FreeSeg Int
     deriving (Eq, Show)
@@ -28,6 +32,7 @@ parseDiskSegments :: Parser [DiskSegment]
 parseDiskSegments =
     zipWith ($) (cycle [FileSeg, FreeSeg])
         <$> (many (digitToInt <$> digitChar) <* eol)
+
 
 diskFromDiskmap :: [DiskSegment] -> ST s (STUArray s Int Int)
 diskFromDiskmap diskmap = do
@@ -65,9 +70,83 @@ compactDisk arr = getBounds arr >>= uncurry go
                           writeArray arr ixR (-1)
                           go (ixL + 1) (ixR - 1)
 
+
 diskChecksum :: STUArray s Int Int -> ST s Int
 diskChecksum arr = foldl' foo 0 <$> getAssocs arr where
     foo acc (ix, fileId) =
         if fileId >= 0
            then acc + ix * fileId
            else acc
+
+data LabeledSegment = FileSegLabeled Int Int | FreeSegUnlabeled Int
+    deriving (Eq, Show)
+
+type LabeledDiskmap = Seq LabeledSegment
+
+snocSeg :: LabeledDiskmap -> LabeledSegment -> LabeledDiskmap
+(segs :|> FreeSegUnlabeled x) `snocSeg` FreeSegUnlabeled y = segs :|> FreeSegUnlabeled (x + y)
+segs `snocSeg` fs = segs :|> fs
+
+infixl 5 `snocSeg`
+
+consSeg :: LabeledSegment -> LabeledDiskmap -> LabeledDiskmap
+FreeSegUnlabeled y `consSeg` (FreeSegUnlabeled x :<| segs) = FreeSegUnlabeled (x + y) :<| segs
+seg `consSeg` segs = seg :<| segs
+
+infixr 5 `consSeg`
+
+labelSegments :: [DiskSegment] -> LabeledDiskmap
+labelSegments = go 0 id
+    where
+        go _ k [] = k Empty
+        go n k ((FileSeg x):segs) = go (n + 1) (k . (FileSegLabeled n x `consSeg`)) segs
+        go n k ((FreeSeg x):segs) = go n (k . (FreeSegUnlabeled x `consSeg`)) segs
+
+compactDiskFilewise :: LabeledDiskmap -> LabeledDiskmap
+compactDiskFilewise allSegs = go (lastFileId allSegs) allSegs where
+    go :: Int -> LabeledDiskmap -> LabeledDiskmap
+    go i segs | i <= 0 = segs
+              | otherwise = go (i - 1) (moveIthFile i segs)
+
+    moveIthFile :: Int -> LabeledDiskmap -> LabeledDiskmap
+    moveIthFile _ Empty = Empty
+    moveIthFile i (segs :|> seg@(FreeSegUnlabeled _)) = moveIthFile i segs `snocSeg` seg
+    moveIthFile i (segs :|> seg@(FileSegLabeled n x))
+      | n == i = fromMaybe (segs :|> seg) $ fmap (`snocSeg` FreeSegUnlabeled x) $ tryInsertInto segs seg
+      | otherwise = moveIthFile i segs :|> seg
+
+    tryInsertInto :: LabeledDiskmap -> LabeledSegment -> Maybe LabeledDiskmap
+    tryInsertInto Empty _ = Nothing
+    tryInsertInto _ (FreeSegUnlabeled _) = error "tryInsertInto: pointless to insert free segment"
+    tryInsertInto (h@(FileSegLabeled _ _) :<| segs) seg = consSeg h <$> tryInsertInto segs seg
+    tryInsertInto (h@(FreeSegUnlabeled x) :<| segs) seg@(FileSegLabeled _ y)
+      | y == x = Just $ seg `consSeg` segs
+      | y < x = Just $ seg `consSeg` FreeSegUnlabeled (x - y) `consSeg` segs
+      | otherwise = consSeg h <$> tryInsertInto segs seg
+
+lastFileId :: LabeledDiskmap -> Int
+lastFileId Empty = error "lastFileId: no file segments in Sequence"
+lastFileId (segs :|> FreeSegUnlabeled _) = lastFileId segs
+lastFileId (_ :|> FileSegLabeled n _) = n
+
+labeledMapChecksum :: LabeledDiskmap -> Int
+labeledMapChecksum = go 0 0 where
+    go _ acc Empty = acc
+    go ix acc (FreeSegUnlabeled x :<| segs) = go (ix + x) acc segs
+    go ix acc (fs@(FileSegLabeled _ x) :<| segs) = go (ix + x) (acc + contribution ix fs) segs
+
+    -- contribution ix (FileSegLabeled n x) = ix * n + (ix + 1) * n + ... + (ix + x - 1) * n
+    -- = (ix + (ix + 1) + ... + (ix + x - 1)) * n
+    contribution ix (FileSegLabeled n x) = n * sumFromTo ix (ix + x - 1)
+    contribution _ (FreeSegUnlabeled _) = 0 -- ^ unreachable, I'm pretty sure
+
+-- https://math.stackexchange.com/a/2713687
+sumFromTo :: Integral a => a -> a -> a
+sumFromTo x y = (x + y) * (y - x + 1) `div` 2
+
+-- for debugging purposes
+showLdm :: LabeledDiskmap -> String
+showLdm = foldr foo "" where
+    foo seg s = (++ s) $ case seg of
+                            FileSegLabeled n x -> replicate x (intToDigit (n `mod` 10))
+                            FreeSegUnlabeled x -> replicate x '.'
