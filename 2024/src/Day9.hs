@@ -78,7 +78,7 @@ diskChecksum arr = foldl' foo 0 <$> getAssocs arr where
            then acc + ix * fileId
            else acc
 
-data LabeledSegment = FileSegLabeled Int Int | FreeSegUnlabeled Int
+data LabeledSegment = FileSegLabeled {-# UNPACK #-} !Int {-# UNPACK #-} !Int | FreeSegUnlabeled {-# UNPACK #-} !Int
     deriving (Eq, Show)
 
 type LabeledDiskmap = Seq LabeledSegment
