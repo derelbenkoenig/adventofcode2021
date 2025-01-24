@@ -106,23 +106,48 @@ compactDiskFilewise :: LabeledDiskmap -> LabeledDiskmap
 compactDiskFilewise allSegs = go (lastFileId allSegs) allSegs where
     go :: Int -> LabeledDiskmap -> LabeledDiskmap
     go i segs | i <= 0 = segs
-              | otherwise = go (i - 1) (moveIthFile i segs)
+              | otherwise = moveIthFile i segs (go (i - 1))
 
-    moveIthFile :: Int -> LabeledDiskmap -> LabeledDiskmap
-    moveIthFile _ Empty = Empty
-    moveIthFile i (segs :|> seg@(FreeSegUnlabeled _)) = moveIthFile i segs `snocSeg` seg
-    moveIthFile i (segs :|> seg@(FileSegLabeled n x))
-      | n == i = fromMaybe (segs :|> seg) $ fmap (`snocSeg` FreeSegUnlabeled x) $ tryInsertInto segs seg
-      | otherwise = moveIthFile i segs :|> seg
+    moveIthFile :: Int -> LabeledDiskmap -> (LabeledDiskmap -> LabeledDiskmap) -> LabeledDiskmap
+    moveIthFile _ Empty k = k Empty
+    moveIthFile i (segs :|> seg@(FreeSegUnlabeled _)) k = moveIthFile i segs (k . (`snocSeg` seg))
+    moveIthFile i m@(segs :|> seg@(FileSegLabeled n x)) k
+      -- | n == i = fromMaybe m $ fmap (`snocSeg` FreeSegUnlabeled x) $ tryInsertInto segs seg
+      | n == i = runYMaybe (tryInsertInto segs seg) (`snocSeg` FreeSegUnlabeled x) (k m) k
+      | otherwise = moveIthFile i segs (k . (:|> seg))
 
-    tryInsertInto :: LabeledDiskmap -> LabeledSegment -> Maybe LabeledDiskmap
-    tryInsertInto Empty _ = Nothing
+    tryInsertInto :: LabeledDiskmap -> LabeledSegment -> YMaybe LabeledDiskmap
+    tryInsertInto Empty _ = yNothing
     tryInsertInto _ (FreeSegUnlabeled _) = error "tryInsertInto: pointless to insert free segment"
     tryInsertInto (h@(FileSegLabeled _ _) :<| segs) seg = consSeg h <$> tryInsertInto segs seg
     tryInsertInto (h@(FreeSegUnlabeled x) :<| segs) seg@(FileSegLabeled _ y)
-      | y == x = Just $ seg `consSeg` segs
-      | y < x = Just $ seg `consSeg` FreeSegUnlabeled (x - y) `consSeg` segs
+      | y == x = yJust $ seg `consSeg` segs
+      | y < x = yJust $ seg `consSeg` FreeSegUnlabeled (x - y) `consSeg` segs
       | otherwise = consSeg h <$> tryInsertInto segs seg
+
+-- covariant Yoneda of Church encoded Maybe
+newtype YMaybe a = YMaybe { runYMaybe :: forall b c. (a -> b) -> c -> (b -> c) -> c }
+
+lowerYMaybe :: YMaybe a -> Maybe a
+lowerYMaybe m = runYMaybe m id Nothing Just
+
+-- lowerYMaybe (fmap f m)
+-- = runYMaybe (fmap f m) id Nothing Just
+-- = runYMaybe (YMaybe $ \ k n j -> runYMaybe m (k . f) n j) id Nothing Just
+-- = (\ k n j -> runYMaybe m (k . f) n j) id Nothing Just
+-- = (\ k n -> runYMaybe m (k . f) n Just) id Nothing
+-- = (\ k -> runYMaybe m (k . f) Nothing Just) id
+-- = runYMaybe m (id . f) Nothing Just
+-- = runYMaybe m f Nothing Just
+
+instance Functor YMaybe where
+    fmap f m = YMaybe $ \ k n j -> runYMaybe m (k . f) n j
+
+yJust :: a -> YMaybe a
+yJust x = YMaybe $ \ k _ j -> j (k x)
+
+yNothing :: YMaybe a
+yNothing = YMaybe $ \ _ n _ -> n
 
 lastFileId :: LabeledDiskmap -> Int
 lastFileId Empty = error "lastFileId: no file segments in Sequence"
